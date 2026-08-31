@@ -82,8 +82,15 @@ Must be set before `helheim-core' is loaded!"
             :files (:defaults "modes"))
   (hel-collection-init))
 
+(with-eval-after-load 'compat
+  (when (>= emacs-major-version 31)
+    (require 'compat-31 nil t)))
+
 (setup compat
-  (:install t))
+  (:install t)
+  (:require t)
+  (when (>= emacs-major-version 31)
+    (require 'compat-31 nil t)))
 
 (setup transient
   (:install t)

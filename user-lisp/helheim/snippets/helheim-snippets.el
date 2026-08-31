@@ -13,6 +13,10 @@
 
 ;;; Config
 
+(defun helheim-tempel-capf ()
+  "Complete Tempel templates triggered by `/`."
+  (cape-wrap-trigger #'tempel-complete ?/))
+
 (setup tempel
   (:install t)
   ;; The tempel default is "templates" under `user-emacs-directory', which

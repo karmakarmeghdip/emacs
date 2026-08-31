@@ -1,4 +1,5 @@
 *.elc
+eln-cache
 custom.el
 var/
 .user-lisp-autoloads.el

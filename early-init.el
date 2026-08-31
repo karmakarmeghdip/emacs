@@ -245,6 +245,8 @@ cookies.")
       package-user-dir     (locate-user-emacs-file "elpa/")
       user-lisp-directory  (expand-file-name "user-lisp/" helheim-root-directory))
 
+(add-to-list 'custom-theme-load-path (expand-file-name "themes/" helheim-root-directory))
+
 ;; Don't compile content of `user-emacs-directory' in `prepare-user-lisp'
 ;; funciton. It is called to early when dependencies are not installed yet.
 ;; And it will be compiled later by `compile-angel'.

@@ -8,7 +8,7 @@
 ;; faces, overlays, etc. (Press "<F1> k ga" to find out which command is bound
 ;; to "ga".)
 
-(let* ((font "Cascadia Code") ;; <- replace with you font
+(let* ((font "MartianMono Nerd Font") ;; <- replace with you font
        (spec (font-spec :family font :size 13.0 :weight 'normal)))
   (set-face-font 'default spec)
   (set-face-font 'fixed-pitch spec)
@@ -69,9 +69,9 @@
 
 ;;; Color theme
 
-(setup helheim-modus-themes
+(setup helheim-catppuccin
   (:require t)
-  (load-theme 'modus-operandi t))
+  (load-theme 'catppuccin t))
 
 ;; I can recommend `leuven' theme for org-mode work. It has so many nice little
 ;; touches to spruce up org-mode elements that some users switch to it from
@@ -91,7 +91,7 @@
 (require 'helheim-embark)     ; Context-aware action menus
 (require 'helheim-modeline)   ; Normal people call this "status line"
 (require 'helheim-outline)    ; See "Outline Mode" in Emacs manual
-(require 'helheim-tab-bar)    ; Each tab represents a set of windows, as in Vim
+; (require 'helheim-tab-bar)    ; Each tab represents a set of windows, as in Vim
 
 ;;; Search
 
@@ -133,10 +133,11 @@
 (require 'helheim-markdown)
 (require 'helheim-lua)
 (require 'helheim-sh)
+(require 'helheim-typescript)
 
 ;;; Terminal emulators
 
-; (require 'helheim-ghostel) ; based on libghostty (Zig) -- same as in Ghostty
+(require 'helheim-ghostel) ; based on libghostty (Zig) -- same as in Ghostty
 ; (require 'helheim-vterm)   ; based on libvterm (C) -- same as in Neovim
 
 ;;; LLM

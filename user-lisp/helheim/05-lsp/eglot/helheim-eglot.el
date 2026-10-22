@@ -93,6 +93,14 @@
    eglot-code-action-indicator "" ;; 💡   󰌵 󱠂 󱠃
    eglot-extend-to-xref t)
   (:after-load
+    ;; TypeScript 7+ has built-in LSP via `tsc --lsp --stdio'.
+    (add-to-list 'eglot-server-programs
+                 '(((js-mode :language-id "javascript")
+                    (js-ts-mode :language-id "javascript")
+                    (tsx-ts-mode :language-id "typescriptreact")
+                    (typescript-ts-mode :language-id "typescript")
+                    (typescript-mode :language-id "typescript"))
+                   . ("tsc" "--lsp" "--stdio")))
     ;; PERF: Disable the eglot-events-buffer, so Emacs doesn't churn GC and
     ;;   CPU cycles on pretty-printing the events buffer in the background
     ;;   (once it reaches max size).

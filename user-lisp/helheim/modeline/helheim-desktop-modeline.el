@@ -176,6 +176,8 @@ narrow windows omit the clock rather than overlap the right-hand status."
         (doom-modeline-set-modeline 'desktop)))))
 
 (with-eval-after-load 'ewm
+  ;; The initial D-Bus refresh can fire before EWM finishes enabling.
+  (add-hook 'ewm-mode-hook #'helheim-desktop-modeline--refresh)
   (helheim-desktop-modeline--watch))
 
 (provide 'helheim-desktop-modeline)

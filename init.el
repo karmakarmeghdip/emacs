@@ -8,10 +8,12 @@
 ;; faces, overlays, etc. (Press "<F1> k ga" to find out which command is bound
 ;; to "ga".)
 
-(let* ((font "ZedMono Nerd Font") ;; <- replace with you font
-       (spec (font-spec :family font :size 13.0 :weight 'normal)))
-  (set-face-font 'default spec)
-  (set-face-font 'fixed-pitch spec)
+(let ((font "ZedMono Nerd Font") ;; <- replace with your font
+      (size 13.0))
+  ;; Explicit attributes also work before a daemon has any graphical frames.
+  (dolist (face '(default fixed-pitch))
+    (set-face-attribute face nil :family font :height (round (* size 10))
+                        :weight 'normal))
   ;; Prepend our font to the default fontset to make it the first fallback
   ;; candidate for itself. This matters when text is bold or italic and the
   ;; default font lacks glyphs for those styles but does provide them for the

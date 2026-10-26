@@ -8,7 +8,7 @@
 ;; faces, overlays, etc. (Press "<F1> k ga" to find out which command is bound
 ;; to "ga".)
 
-(let* ((font "MartianMono Nerd Font") ;; <- replace with you font
+(let* ((font "ZedMono Nerd Font") ;; <- replace with you font
        (spec (font-spec :family font :size 13.0 :weight 'normal)))
   (set-face-font 'default spec)
   (set-face-font 'fixed-pitch spec)
@@ -90,6 +90,7 @@
 (require 'helheim-dired)      ; File-manager
 (require 'helheim-embark)     ; Context-aware action menus
 (require 'helheim-modeline)   ; Normal people call this "status line"
+(require 'helheim-desktop-modeline)
 (require 'helheim-outline)    ; See "Outline Mode" in Emacs manual
 ; (require 'helheim-tab-bar)    ; Each tab represents a set of windows, as in Vim
 
@@ -142,8 +143,8 @@
 
 ;;; LLM
 
-; (require 'helheim-agent-shell)
-; (require 'helheim-mcp-server)
+(require 'helheim-agent-shell)
+(require 'helheim-mcp-server)
 
 ;;; Extra ficilities
 

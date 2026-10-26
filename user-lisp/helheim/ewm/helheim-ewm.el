@@ -9,6 +9,17 @@
 
 ;;; Code:
 
+(defun helheim-ewm-terminal ()
+  "Open a new Alacritty terminal in the current local directory."
+  (interactive)
+  (unless (executable-find "alacritty")
+    (user-error "Alacritty is not installed"))
+  (let ((default-directory (if (file-remote-p default-directory)
+                               (expand-file-name "~/")
+                             default-directory)))
+    (start-process "alacritty" nil "alacritty"
+                   "--working-directory" default-directory)))
+
 (defun helheim-ewm--get-font-config ()
   "Detect the font family and size configured in `init.el'."
   (let ((font (car (fontset-font t ?a)))
@@ -26,7 +37,7 @@
               (when (re-search-forward ":size\\s-+\\([0-9.]+\\)" nil t)
                 (setq size (string-to-number (match-string 1)))))))
       (error nil))
-    (cons (or font "MartianMono Nerd Font") (or size 13.0))))
+    (cons (or font "ZedMono Nerd Font") (or size 13.0))))
 
 (defun helheim-ewm--apply-font (&optional frame)
   "Apply the font configured in `init.el' to FRAME (or all graphic frames)."
@@ -80,6 +91,8 @@
   (add-hook 'after-make-frame-functions #'helheim-ewm--apply-font)
 
   ;; 5. Keybindings
+  ;; Super+Return: New terminal surface, also available over fullscreen apps.
+  (keymap-set ewm-mode-map "s-<return>" (ewm-key #'helheim-ewm-terminal :fullscreen))
   ;; Super+b: Switch buffers / Wayland apps with Consult
   (keymap-set ewm-mode-map "s-b" (ewm-key #'consult-buffer :fullscreen))
   ;; Super+q: Close the focused buffer / Wayland application

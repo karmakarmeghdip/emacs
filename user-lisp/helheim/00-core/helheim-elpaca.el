@@ -41,6 +41,16 @@
     (require 'elpaca)
     (elpaca-generate-autoloads "elpaca" repo)
     (let ((load-source-file-function nil)) (load "./elpaca-autoloads"))))
+
+;; Workaround upstream Elpaca bug where `elpaca--enqueue' returns the string
+;; from `warn' instead of `e' when a package was already queued.
+(advice-add 'elpaca--enqueue :around
+            (lambda (orig-fn order &optional queue)
+              (let ((res (funcall orig-fn order queue)))
+                (if (stringp res)
+                    (elpaca-get (elpaca--first order))
+                  res))))
+
 (add-hook 'after-init-hook #'elpaca-process-queues)
 (elpaca `(,@elpaca-order))
 

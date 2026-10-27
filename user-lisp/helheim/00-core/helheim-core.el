@@ -70,6 +70,14 @@ Must be set before `helheim-core' is loaded!"
            ;; a poor default.
            avy-single-candidate-jump nil))
 
+;; Queue this before Hel, which also declares it as a dependency.  A later
+;; explicit installation would duplicate Elpaca's dependency queue entry.
+(setup ultra-scroll
+  (:install t)
+  (:after-init ultra-scroll-mode)
+  (:setopt mouse-wheel-tilt-scroll t ; Scroll horizontally with mouse side wheel.
+           mouse-wheel-progressive-speed nil))
+
 (setup hel
   (:install t)
   (hel-mode))
@@ -344,14 +352,6 @@ Use `delete-trailing-whitespace' command."
 (setq jit-lock-defer-time 0)
 (add-hook 'hel-insert-state-enter-hook (lambda () (setq jit-lock-defer-time 0.25)))
 (add-hook 'hel-insert-state-exit-hook  (lambda () (setq jit-lock-defer-time 0)))
-
-;;;;; Scrolling with mouse wheel and touchpad
-
-(setup ultra-scroll
-  (:install t)
-  (:after-init ultra-scroll-mode)
-  (:setopt mouse-wheel-tilt-scroll t ; Scroll horizontally with mouse side wheel.
-           mouse-wheel-progressive-speed nil))
 
 ;;; Text editing
 ;;;; Clipboard

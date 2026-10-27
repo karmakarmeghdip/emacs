@@ -8,6 +8,8 @@
 
 ;;; Code:
 
+(require 'helheim-ewm-power)
+
 (defun helheim-ewm-terminal ()
   "Open a new Alacritty terminal in the current local directory."
   (interactive)
@@ -53,7 +55,12 @@
   ;; Super+d: Buffers, running Wayland apps, files and XDG apps.
   (keymap-set ewm-mode-map "s-d" (ewm-key #'consult-buffer :fullscreen))
   ;; Super+q: Close the focused buffer / Wayland application
-  (keymap-set ewm-mode-map "s-q" (ewm-key #'kill-current-buffer :fullscreen)))
+  (keymap-set ewm-mode-map "s-q" (ewm-key #'kill-current-buffer :fullscreen))
+  ;; Use the same supervised locker for manual, idle and logind requests.
+  (keymap-set ewm-mode-map "s-l" (ewm-key #'helheim-ewm-lock :fullscreen))
+  (add-hook 'ewm-mode-hook #'helheim-ewm-power--start)
+  (when (bound-and-true-p ewm-mode)
+    (helheim-ewm-power--start)))
 
 (provide 'helheim-ewm)
 

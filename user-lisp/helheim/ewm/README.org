@@ -1,0 +1,157 @@
+#+title: EWM desktop integration
+
+* Unified launcher
+
+=Super+d= opens =consult-buffer=, including buffers, running
+Wayland apps, recent files, bookmarks, and installed XDG desktop applications.
+Use =a SPC= to narrow to Apps, then select an application to launch it through
+EWM.  The shortcut works over fullscreen applications.
+
+=helheim-ewm-consult= appends its source without replacing existing Consult
+sources.  Application entries are refreshed whenever the launcher opens, and
+the source is disabled outside an active EWM session.  No extra package is
+needed beyond the existing Consult and EWM installations.
+
+* Notifications
+
+EDNC provides the session's standard D-Bus desktop notification service.
+It starts with EWM, unless another notification server is already running.
+Do not run Mako, Dunst or another notification daemon alongside it.
+
+- Open =*ednc-log*= through =Super+d= to read notification history; no new
+  global shortcut or mode-line indicator is installed.
+- New notifications show a single-line app/title/body preview in the echo
+  area.  Click the preview to open that notification with its details expanded.
+  Long previews are truncated; the full contents remain in the log.
+- Previews wait while a minibuffer prompt is active.  Bursts show the newest
+  preview, but every notification is logged.  Normal Emacs messages may
+  replace the preview; previews are not duplicated into =*Messages*=.
+- In the log, =TAB= expands details, =RET= invokes the default action,
+  =C-down-mouse-1= opens the application's action menu, and =d= dismisses.
+  Actions require the notification to remain active; expired/dismissed
+  notifications remain readable in history.
+- There are no volume/brightness notification changes in this integration.
+
+Some applications detect the notification service only on startup; restart
+them if notifications do not appear after enabling EDNC for the first time.
+
+Run the notification tests without starting a desktop notification server:
+
+#+begin_src sh
+emacs -Q --batch --eval '(setq load-prefer-newer t)' \
+  -L var/elpaca/builds/ednc -L user-lisp/helheim/ewm \
+  -l tests/helheim-ewm-notifications-tests.el -f ert-run-tests-batch-and-exit
+#+end_src
+
+* Hardware controls
+
+EWM's built-in bindings handle volume up/down, speaker mute, microphone mute,
+and display brightness up/down, including over fullscreen applications.
+Volume and brightness change in 5% steps; volume is capped at 100%.
+Depending on the keyboard's Fn-lock setting, these keys may require =Fn=.
+
+These bindings require =wpctl= (WirePlumber) for audio and =brightnessctl=
+for the laptop backlight.  On CachyOS/Arch, install missing dependencies with:
+
+#+begin_src sh
+sudo pacman -S --needed wireplumber brightnessctl
+#+end_src
+
+No additional Emacs bindings are necessary.  To diagnose the underlying tools:
+
+#+begin_src sh
+wpctl get-volume @DEFAULT_AUDIO_SINK@
+brightnessctl -m
+#+end_src
+
+* Behaviour
+
+- Unlocked on AC: no automatic locking or display blanking.
+- Unlocked on battery: lock after 5 minutes without input.
+- Locked on either power source: blank after 30 seconds without input.
+- Input wakes the displays without unlocking; inactivity blanks them again.
+- Locked on battery: suspend after 15 minutes without input.  The 30-second
+  blanking interval is included, not added to those 15 minutes.
+- Connecting AC or unlocking cancels pending automatic suspension.
+- Unplugging while already locked/idle starts a fresh 15-minute countdown.
+- Unknown power state disables automatic locking/suspension, not manual locking.
+- EWM's insomnia mode prevents idle suspension.  Its existing lid policy is
+  unchanged: lid closure can still suspend on AC.
+
+Super+L calls =helheim-ewm-lock=.  The same function handles automatic locking
+and logind's session-specific Lock signal (=loginctl lock-session=).
+
+* Configuration
+
+Customize group =helheim-ewm-power=:
+
+| Option                            | Default |
+|-----------------------------------+---------|
+| helheim-ewm-power-lock-delay       |     300 |
+| helheim-ewm-power-blank-delay      |      30 |
+| helheim-ewm-power-suspend-delay    |     900 |
+| helheim-ewm-power-lock-config      | bundled hyprlock-ewm.conf |
+
+Use a positive blank delay smaller than the suspend delay.  Apply timing
+changes before starting EWM (or re-run =helheim-ewm-power--apply-idle= while
+unlocked).  The bundled solid-background, clock/password configuration avoids
+Hyprland-specific commands and screenshot dependencies.  The obsolete
+=~/.config/hypr/hyprlock.conf= and =hypridle.conf= have been removed.
+Point the config option at another file to
+theme the locker; do not enable a grace period or suppress lifecycle logging.
+
+Dependencies: Hyprlock, coreutils (=stdbuf=), UPower, logind, and Emacs with
+D-Bus support and the =:keep-fd= / =dbus--close-fd= inhibitor API.  EWM already
+requires a recent Emacs.  Do not run hypridle/swayidle or another desktop power
+manager in the same session: they could independently lock or suspend on AC.
+
+* Implementation and safety
+
+=ewm-idle= handles compositor-observed inactivity, including input to native
+applications and Hyprlock.  Its idle hook arms a normal Emacs timer for the
+remaining 870 seconds after locked-screen blanking, and cancels it on activity.
+The suspend callback rechecks power source, lock state and insomnia mode.
+
+Hyprlock currently exposes no public readiness/unlock FD.  The supervisor
+recognizes its =onLockLocked called= and =Unlocked, exiting!= log messages,
+verified against the installed binary.  It does not equate exit status zero
+with successful unlock.  A changed log format fails conservatively: no
+automatic suspend or unlocked-state assumption.  Review this integration when
+upgrading Hyprlock.  No immediate blanking depends on these messages.
+
+The session publishes logind's LockedHint and holds a sleep-delay inhibitor.
+On PrepareForSleep it starts the locker and releases the inhibitor after lock
+confirmation; on resume it reacquires the inhibitor and discards old suspend
+deadlines.  Like other delay-inhibitor clients, this cannot prevent sleep past
+logind's InhibitDelayMaxSec if locking fails or takes too long.  Ensure this
+limit is sufficient for the machine.  External Unlock signals do not bypass
+Hyprlock authentication.
+
+Locker output is kept in the bounded =*EWM Hyprlock*= buffer.  A crash is not
+an unlock: EWM remains securely locked, idle suspension is disabled, and a
+replacement locker can recover the session.  Because locked keyboard input
+cannot reach Emacs, switch to another VT, log in as the same user and run:
+
+#+begin_src sh
+emacsclient --eval '(helheim-ewm-lock)'
+#+end_src
+
+Use the appropriate =--socket-name= if this Emacs uses a named server.  This
+starts a replacement locker; it does not bypass authentication.  For an EWM
+session without an Emacs server, recovery requires restarting the session.
+
+* Validation
+
+Run mocked tests from the Emacs configuration directory:
+
+#+begin_src sh
+emacs -Q --batch -L user-lisp/helheim/ewm \
+  -l tests/helheim-ewm-power-tests.el -f ert-run-tests-batch-and-exit
+#+end_src
+
+Before relying on the policy, test in a real EWM session: manual lock/unlock,
+AC inactivity, battery auto-lock, repeated wake/reblank, input cancelling
+suspend, plugging/unplugging, resume, insomnia, and external display/lid use.
+Use shorter delays temporarily, keeping blank delay below suspend delay.
+Check the diagnostic buffer for confirmed-lock/unlock messages.  Tests do not
+launch a locker, power off a monitor, acquire inhibitors or suspend the host.

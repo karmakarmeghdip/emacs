@@ -21,6 +21,14 @@
 
 ;;;###autoload (with-eval-after-load 'ewm (require 'helheim-ewm))
 (with-eval-after-load 'ewm
+  (setup ednc
+    (:install t)
+    (:require t)
+    (require 'helheim-ewm-notifications))
+
+  (with-eval-after-load 'consult
+    (require 'helheim-ewm-consult))
+
   ;; Display: 1.25x fractional scaling
   (setopt ewm-output-config
           '(("eDP-1" :scale 1.25)
@@ -42,8 +50,8 @@
   ;; Keybindings
   ;; Super+Return: New terminal surface, also available over fullscreen apps.
   (keymap-set ewm-mode-map "s-<return>" (ewm-key #'helheim-ewm-terminal :fullscreen))
-  ;; Super+b: Switch buffers / Wayland apps with Consult
-  (keymap-set ewm-mode-map "s-b" (ewm-key #'consult-buffer :fullscreen))
+  ;; Super+d: Buffers, running Wayland apps, files and XDG apps.
+  (keymap-set ewm-mode-map "s-d" (ewm-key #'consult-buffer :fullscreen))
   ;; Super+q: Close the focused buffer / Wayland application
   (keymap-set ewm-mode-map "s-q" (ewm-key #'kill-current-buffer :fullscreen)))
 

@@ -1,5 +1,6 @@
 *.elc
 custom.el
 var/
+eln-cache/
 .user-lisp-autoloads.el
 .agent-shell/

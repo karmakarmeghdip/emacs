@@ -21,7 +21,12 @@ Do not run Mako, Dunst or another notification daemon alongside it.
 - Open =*ednc-log*= through =Super+d= to read notification history; no new
   global shortcut or mode-line indicator is installed.
 - New notifications show a single-line app/title/body preview in the echo
-  area.  Click the preview to open that notification with its details expanded.
+  area.  Click the preview to invoke the application's default action (usually
+  opening/focusing its window).  A Wayland activation token is sent first for
+  clients that support it; the application decides how to handle the action.
+  Notifications without a default action, or no longer active, open in history.
+  Previews disappear after 15 seconds (customize
+  =helheim-ewm-notifications-preview-duration=); history is retained.
   Long previews are truncated; the full contents remain in the log.
 - Previews wait while a minibuffer prompt is active.  Bursts show the newest
   preview, but every notification is logged.  Normal Emacs messages may

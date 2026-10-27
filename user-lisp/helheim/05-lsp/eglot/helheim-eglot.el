@@ -65,7 +65,7 @@
 (setup flymake
   (:install nil)
   (:hook prog-mode-hook flymake-mode)
-  (setopt flymake-mode-line-lighter nil
+  (setopt flymake-mode-line-lighter ""
           flymake-show-diagnostics-at-end-of-line nil
           flymake-wrap-around t))
 
@@ -114,10 +114,8 @@
 
 ;; Eglot expands the snippets a language server sends by calling
 ;; `yas-expand-snippet', and asks the server for snippets only when
-;; YASnippet is installed. `helheim-snippets' configures it for your own
-;; snippets.
-(setup yasnippet
-  (:install t))
+;; YASnippet is installed. `helheim-snippets', loaded before this module,
+;; installs and configures it; do not queue the package a second time here.
 
 (setup consult-eglot
   (:install t)

@@ -23,11 +23,6 @@
 
 ;;;###autoload (with-eval-after-load 'ewm (require 'helheim-ewm))
 (with-eval-after-load 'ewm
-  (setup ednc
-    (:install t)
-    (:require t)
-    (require 'helheim-ewm-notifications))
-
   (with-eval-after-load 'consult
     (require 'helheim-ewm-consult))
 

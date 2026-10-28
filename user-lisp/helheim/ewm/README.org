@@ -16,6 +16,11 @@ needed beyond the existing Consult and EWM installations.
 
 EDNC provides the session's standard D-Bus desktop notification service.
 It starts with EWM, unless another notification server is already running.
+Its package is declared in =helheim-ewm-notifications-setup.el=, loaded through
+Helheim's user-lisp autoloads once =helheim-setup= is ready.  No notification
+configuration is needed in =init.el=.  The daemon activates EDNC during normal
+package initialization, even when EWM is loaded later by a client.  The
+integration handles either load order: EDNC before EWM, or EWM before EDNC.
 Do not run Mako, Dunst or another notification daemon alongside it.
 
 - Open =*ednc-log*= through =Super+d= to read notification history; no new

@@ -6,6 +6,9 @@
 
 (defvar ewm-mode nil)
 
+(defconst helheim-ewm-notifications-test--root
+  (expand-file-name ".." (file-name-directory (or load-file-name buffer-file-name))))
+
 (defun helheim-ewm-notifications-test--notification ()
   (ednc--notification-create :id 1 :app-name "Chat" :summary "New message"
                              :body "Hello\nworld" :actions '("default" "Open")))
@@ -166,6 +169,51 @@
       (helheim-ewm-notifications--sync))
     (should warned)
     (should-not helheim-ewm-notifications--started)))
+
+(ert-deftest helheim-ewm-notifications-starts-with-either-load-order ()
+  (dolist (ewm-already-running '(nil t))
+    (let ((ewm-mode ewm-already-running)
+          (ewm-mode-hook (list #'helheim-ewm-notifications--sync))
+          (ednc-mode nil)
+          (helheim-ewm-notifications--started nil)
+          starts)
+      (cl-letf (((symbol-function 'dbus-list-names) (lambda (_) nil))
+                ((symbol-function 'ednc-mode)
+                 (lambda (arg)
+                   (setq ednc-mode (> arg 0))
+                   (when ednc-mode (push 'started starts)))))
+        ;; The integration calls sync when loaded.  If EWM has not started
+        ;; yet, its mode hook must start EDNC later, after daemon startup.
+        (helheim-ewm-notifications--sync)
+        (should (eq ednc-mode ewm-already-running))
+        (setq ewm-mode t)
+        (run-hooks 'ewm-mode-hook)
+        (should ednc-mode)
+        (should helheim-ewm-notifications--started)
+        (should (equal starts '(started)))))))
+
+(ert-deftest helheim-ewm-notifications-package-declared-at-startup ()
+  (let* ((startup (expand-file-name
+                   "user-lisp/helheim/ewm/helheim-ewm-notifications-setup.el"
+                   helheim-ewm-notifications-test--root))
+         declaration)
+    (with-temp-buffer
+      (insert-file-contents startup)
+      (should (search-forward
+               ";;;###autoload (with-eval-after-load 'helheim-setup (require 'helheim-ewm-notifications-setup))"
+               nil t))
+      (goto-char (point-min))
+      (condition-case nil
+          (while t
+            (let ((form (read (current-buffer))))
+              (when (and (eq (car-safe form) 'setup)
+                         (eq (cadr form) 'ednc))
+                (setq declaration form))))
+        (end-of-file nil)))
+    (should (member '(:install t) declaration))
+    (should (member '(with-eval-after-load 'ewm
+                       (require 'helheim-ewm-notifications))
+                    declaration))))
 
 (ert-deftest helheim-ewm-notifications-keeps-modeline-clean ()
   (should-not (alist-get 'ednc-mode minor-mode-alist))

@@ -99,8 +99,10 @@ Customize group =helheim-ewm-power=:
 
 Use a positive blank delay smaller than the suspend delay.  Apply timing
 changes before starting EWM (or re-run =helheim-ewm-power--apply-idle= while
-unlocked).  The bundled solid-background, clock/password configuration avoids
-Hyprland-specific commands and screenshot dependencies.  The obsolete
+unlocked).  The bundled Hyprlock config uses the Catppuccin Mocha theme from
+=catppuccin/hyprlock=, your configured wallpaper and installed ZedMono font.
+The palette and upstream MIT license are included alongside the config.  It
+avoids Hyprland-specific commands and screenshot dependencies.  The obsolete
 =~/.config/hypr/hyprlock.conf= and =hypridle.conf= have been removed.
 Point the config option at another file to
 theme the locker; do not enable a grace period or suppress lifecycle logging.

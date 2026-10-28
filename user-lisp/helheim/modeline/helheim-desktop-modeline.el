@@ -151,19 +151,23 @@ narrow windows omit the clock rather than overlap the right-hand status."
     (doom-modeline-remove-segment segment 'all))
 
   (doom-modeline-def-segment desktop-title
-    "Display the window title without EWM's buffer-name wrapper."
+    "Display the window or terminal title without its buffer-name wrapper."
     (concat " " (propertize
                  (string-replace "%" "%%"
-                                 (or (and (boundp 'ewm-surface-title)
+                                 (or (and (derived-mode-p 'ghostel-mode)
+                                          (bound-and-true-p ghostel-title))
+                                     (and (boundp 'ewm-surface-title)
                                           (not (string-empty-p (or ewm-surface-title "")))
                                           ewm-surface-title)
                                      (and (boundp 'ewm-surface-app) ewm-surface-app)
+                                     (and (derived-mode-p 'ghostel-mode) "Terminal")
                                      "Application"))
                  'face 'mode-line-buffer-id) " "))
   (doom-modeline-def-segment desktop-status
     (identity helheim-desktop-modeline--status))
   (doom-modeline-def-modeline 'desktop '(desktop-title))
   (add-to-list 'doom-modeline-mode-alist '(ewm-surface-mode . desktop))
+  (setf (alist-get 'ghostel-mode doom-modeline-mode-alist) 'desktop)
   ;; Extend each installed layout instead of copying upstream definitions.
   (dolist (definition doom-modeline--modelines)
     (pcase-let ((`(,name ,left ,right) definition))
@@ -172,7 +176,7 @@ narrow windows omit the clock rather than overlap the right-hand status."
                   :filter-return #'helheim-desktop-modeline--layout)))
   (dolist (buffer (buffer-list))
     (with-current-buffer buffer
-      (when (derived-mode-p 'ewm-surface-mode)
+      (when (derived-mode-p 'ewm-surface-mode 'ghostel-mode)
         (doom-modeline-set-modeline 'desktop)))))
 
 (with-eval-after-load 'ewm

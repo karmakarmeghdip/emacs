@@ -4,6 +4,7 @@
   (:install t)
   (:require t)
   (:setopt ghostel-module-auto-install 'ask)
+  (:setopt ghostel-buffer-name-function #'ghostel-buffer-name-by-title)
   (:hook ghostel-mode-hook (lambda ()
                              ;; Do not enable current line highlighting in
                              ;; ghostel emacs and copy modes.

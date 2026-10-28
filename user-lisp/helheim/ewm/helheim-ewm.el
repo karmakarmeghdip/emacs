@@ -10,17 +10,6 @@
 
 (require 'helheim-ewm-power)
 
-(defun helheim-ewm-terminal ()
-  "Open a new Alacritty terminal in the current local directory."
-  (interactive)
-  (unless (executable-find "alacritty")
-    (user-error "Alacritty is not installed"))
-  (let ((default-directory (if (file-remote-p default-directory)
-                               (expand-file-name "~/")
-                             default-directory)))
-    (start-process "alacritty" nil "alacritty"
-                   "--working-directory" default-directory)))
-
 ;;;###autoload (with-eval-after-load 'ewm (require 'helheim-ewm))
 (with-eval-after-load 'ewm
   (with-eval-after-load 'consult
@@ -46,7 +35,7 @@
 
   ;; Keybindings
   ;; Super+Return: New terminal surface, also available over fullscreen apps.
-  (keymap-set ewm-mode-map "s-<return>" (ewm-key #'helheim-ewm-terminal :fullscreen))
+  (keymap-set ewm-mode-map "s-<return>" (ewm-key #'ghostel-new :fullscreen))
   ;; Super+d: Buffers, running Wayland apps, files and XDG apps.
   (keymap-set ewm-mode-map "s-d" (ewm-key #'consult-buffer :fullscreen))
   ;; Super+q: Close the focused buffer / Wayland application

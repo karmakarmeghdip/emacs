@@ -281,7 +281,7 @@
                  (lambda (&rest _) (cl-incf registrations)))
                 ((symbol-function 'dbus-unregister-object)
                  (lambda (_) (cl-incf unregistered)))
-                ((symbol-function 'dbus--close-fd)
+                ((symbol-function 'dbus--fd-close)
                  (lambda (fd) (setq closed fd))))
         (helheim-ewm-power--start)
         (helheim-ewm-power--start)

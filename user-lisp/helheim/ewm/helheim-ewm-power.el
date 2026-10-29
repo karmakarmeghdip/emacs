@@ -36,7 +36,7 @@ This should be greater than `helheim-ewm-power-blank-delay'."
 (defvar ewm-mode)
 (defvar ewm-insomnia-mode)
 (declare-function ewm-power-on-monitors "ewm-commands" ())
-(declare-function dbus--close-fd "dbusbind.c" (fd))
+(declare-function dbus--fd-close "dbusbind.c" (fd))
 
 (defconst helheim-ewm-power--login-service "org.freedesktop.login1")
 (defconst helheim-ewm-power--login-path "/org/freedesktop/login1")
@@ -160,7 +160,7 @@ This should be greater than `helheim-ewm-power-blank-delay'."
 (defun helheim-ewm-power--release-sleep-delay ()
   "Release logind's sleep-delay inhibitor."
   (when helheim-ewm-power--sleep-fd
-    (dbus--close-fd helheim-ewm-power--sleep-fd)
+    (dbus--fd-close helheim-ewm-power--sleep-fd)
     (setq helheim-ewm-power--sleep-fd nil)))
 
 (defun helheim-ewm-power--inhibit-sleep ()

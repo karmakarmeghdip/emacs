@@ -53,6 +53,37 @@ emacs -Q --batch --eval '(setq load-prefer-newer t)' \
   -l tests/helheim-ewm-notifications-tests.el -f ert-run-tests-batch-and-exit
 #+end_src
 
+* Screenshots
+
+Screenshot capture uses =grim= and =slurp= via EWM's native screencopy
+protocol support (=zwlr_screencopy_v1=).
+
+- =Print= captures an interactive region selection with =slurp=.
+- =Shift+Print= captures the entire screen.
+- Screenshots are saved by default to =~/Pictures/Screenshots/=.
+- The captured image is copied to the Wayland clipboard (=wl-copy --type image/png=).
+- A notification preview is emitted via =notify-send=, integrated with EDNC.
+- Cancelling region selection (<kbd>Esc</kbd> or right-click) aborts cleanly
+  without saving empty files or sending notifications.
+- Execution is non-blocking and runs asynchronously via =make-process=.
+- The keybindings are intercepted with =:fullscreen=, so they work reliably over
+  Emacs buffers, external Wayland windows, and fullscreen applications.
+
+Customize group =helheim-ewm-screenshot=:
+
+| Option                                  | Default                 |
+|-----------------------------------------+-------------------------|
+| =helheim-ewm-screenshot-directory=          | =~/Pictures/Screenshots= |
+| =helheim-ewm-screenshot-copy-to-clipboard= | =t=                      |
+| =helheim-ewm-screenshot-notify=           | =t=                      |
+
+Run screenshot tests:
+
+#+begin_src sh
+emacs -Q --batch -L user-lisp/helheim/ewm \
+  -l tests/helheim-ewm-screenshot-tests.el -f ert-run-tests-batch-and-exit
+#+end_src
+
 * Hardware controls
 
 EWM's built-in bindings handle volume up/down, speaker mute, microphone mute,

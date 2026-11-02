@@ -9,6 +9,7 @@
 ;;; Code:
 
 (require 'helheim-ewm-power)
+(require 'helheim-ewm-screenshot)
 
 ;;;###autoload (with-eval-after-load 'ewm (require 'helheim-ewm))
 (with-eval-after-load 'ewm
@@ -42,6 +43,11 @@
   (keymap-set ewm-mode-map "s-q" (ewm-key #'kill-current-buffer :fullscreen))
   ;; Use the same supervised locker for manual, idle and logind requests.
   (keymap-set ewm-mode-map "s-l" (ewm-key #'helheim-ewm-lock :fullscreen))
+  ;; Screenshots: Print Screen captures region, Shift+Print Screen captures full screen
+  (keymap-set ewm-mode-map "<Print>" (ewm-key #'helheim-ewm-screenshot-region :fullscreen))
+  (keymap-set ewm-mode-map "<print>" (ewm-key #'helheim-ewm-screenshot-region :fullscreen))
+  (keymap-set ewm-mode-map "S-<Print>" (ewm-key #'helheim-ewm-screenshot-screen :fullscreen))
+  (keymap-set ewm-mode-map "S-<print>" (ewm-key #'helheim-ewm-screenshot-screen :fullscreen))
   (add-hook 'ewm-mode-hook #'helheim-ewm-power--start)
   (when (bound-and-true-p ewm-mode)
     (helheim-ewm-power--start)))

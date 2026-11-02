@@ -10,6 +10,8 @@
 (require 'cl-lib)
 (require 'helheim-ewm-clipboard)
 
+(defvar ewm-mode nil)
+
 (ert-deftest helheim-ewm-clipboard-sync-promotes-to-head ()
   "Selected item is promoted to the head of kill-ring and synced."
   (let ((kill-ring (list "item-1" "item-2" "item-3"))

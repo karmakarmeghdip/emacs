@@ -89,7 +89,7 @@ emacs -Q --batch -L user-lisp/helheim/ewm \
 Clipboard management uses Consult to search and pick from Emacs's =kill-ring=,
 which EWM automatically populates with all copies from Wayland clients and Emacs.
 
-- =Super+y= (or =Super+Shift+v=) opens the fuzzy clipboard history picker everywhere.
+- =Super+y= opens the fuzzy clipboard history picker everywhere.
 - Selecting an item inserts it into the active text field (in Emacs or Wayland surfaces)
   and synchronizes it immediately to the active Wayland selection via =ewm-set-selection-module=.
 - Prefix argument =C-u= sets the selected item as the active Wayland clipboard

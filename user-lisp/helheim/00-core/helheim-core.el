@@ -181,6 +181,67 @@ Must be set before `helheim-core' is loaded!"
            (memq 'context-menu helheim-emacs-ui-elements))
   (add-hook 'after-init-hook #'context-menu-mode))
 
+;;;; Horizontal scrolling guard
+;; Disable accidental horizontal scrolling from touchpad tilt in wrapped buffers
+;; (such as terminal and agent-shell) where horizontal scrolling breaks word
+;; wrapping and causes jumping display artifacts. In truncated buffers, only allow
+;; scrolling left when text actually extends offscreen horizontally past the window edge.
+
+(defun helheim-window-text-overflows-p (&optional window)
+  "Return non-nil if any visible line in WINDOW extends past the right edge."
+  (let ((win (or window (selected-window))))
+    (with-selected-window win
+      (and truncate-lines
+           (not (bound-and-true-p visual-line-mode))
+           (let* ((w-width (window-body-width win))
+                  (w-start (window-start win))
+                  (w-end (or (window-end win t) (point-max)))
+                  (hscroll (window-hscroll win))
+                  (overflow nil))
+             (save-excursion
+               (goto-char w-start)
+               (while (and (not overflow) (< (point) w-end) (not (eobp)))
+                 (end-of-line)
+                 (if (> (current-column) (+ w-width hscroll))
+                     (setq overflow t)
+                   (forward-line 1))))
+             overflow)))))
+
+(defun helheim-scroll-left--guard (orig-fun &optional arg set-minimum)
+  "Only scroll left if text actually overflows horizontally past window width.
+In wrapped buffers (e.g. `visual-line-mode' or `truncate-lines' nil),
+horizontal scrolling is disabled and any existing `hscroll' is reset."
+  (interactive "P")
+  (let ((win (selected-window)))
+    (with-selected-window win
+      (if (or (not truncate-lines) (bound-and-true-p visual-line-mode))
+          (when (> (window-hscroll win) 0)
+            (set-window-hscroll win 0))
+        (when (helheim-window-text-overflows-p win)
+          (funcall orig-fun arg set-minimum))))))
+
+(defun helheim-scroll-right--guard (orig-fun &optional arg set-minimum)
+  "Only scroll right if the window is currently scrolled horizontally.
+In wrapped buffers, horizontal scrolling is disabled and any existing
+`hscroll' is reset."
+  (interactive "P")
+  (let ((win (selected-window)))
+    (with-selected-window win
+      (if (or (not truncate-lines) (bound-and-true-p visual-line-mode))
+          (when (> (window-hscroll win) 0)
+            (set-window-hscroll win 0))
+        (when (> (window-hscroll win) 0)
+          (funcall orig-fun arg set-minimum))))))
+
+(advice-add 'scroll-left :around #'helheim-scroll-left--guard)
+(advice-add 'scroll-right :around #'helheim-scroll-right--guard)
+
+(add-hook 'visual-line-mode-hook (lambda () (set-window-hscroll nil 0)))
+(with-eval-after-load 'ghostel
+  (add-hook 'ghostel-mode-hook (lambda () (set-window-hscroll nil 0))))
+(with-eval-after-load 'agent-shell
+  (add-hook 'agent-shell-mode-hook (lambda () (set-window-hscroll nil 0))))
+
 ;;;; Cursor
 
 ;; I anable blinking cursor, but it may interferes with cursor settings in some
@@ -249,20 +310,13 @@ The predicate is passed as argument to `buffer-match-p', which see."
 
 ;;;; Fill-Column indicator
 
-(add-hook 'prog-mode-hook 'helheim-show-fill-column-indicator)
+;; Disabled: do not display vertical fill-column indicator (e.g. at 80 cols)
+(setq-default display-fill-column-indicator nil)
 
 (defun helheim-show-trailing-whitespace ()
   "Highlight trailing whitespaces with `trailing-whitespace' face.
 Use `delete-trailing-whitespace' command."
   (setq-local show-trailing-whitespace t))
-
-;; TODO: report this
-;; BUG: In `display-fill-column-indicator-mode': two strings are compared with
-;;   `eq' instead of `equal' and result is always nil.
-(defun helheim-show-fill-column-indicator ()
-  "Display `fill-column' indicator."
-  (setq-local display-fill-column-indicator t
-              display-fill-column-indicator-character ?\u2502))
 
 ;;;; Fringes
 

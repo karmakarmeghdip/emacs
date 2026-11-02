@@ -10,6 +10,7 @@
 
 (require 'helheim-ewm-power)
 (require 'helheim-ewm-screenshot)
+(require 'helheim-ewm-clipboard)
 
 ;;;###autoload (with-eval-after-load 'ewm (require 'helheim-ewm))
 (with-eval-after-load 'ewm
@@ -48,6 +49,10 @@
   (keymap-set ewm-mode-map "<print>" (ewm-key #'helheim-ewm-screenshot-region :fullscreen))
   (keymap-set ewm-mode-map "S-<Print>" (ewm-key #'helheim-ewm-screenshot-screen :fullscreen))
   (keymap-set ewm-mode-map "S-<print>" (ewm-key #'helheim-ewm-screenshot-screen :fullscreen))
+  ;; Clipboard history picker: Super+y (and Super+Shift+v)
+  (keymap-set ewm-mode-map "s-y" (ewm-key #'helheim-ewm-clipboard :fullscreen))
+  (keymap-set ewm-mode-map "s-V" (ewm-key #'helheim-ewm-clipboard :fullscreen))
+  (keymap-set ewm-mode-map "S-s-v" (ewm-key #'helheim-ewm-clipboard :fullscreen))
   (add-hook 'ewm-mode-hook #'helheim-ewm-power--start)
   (when (bound-and-true-p ewm-mode)
     (helheim-ewm-power--start)))

@@ -84,6 +84,25 @@ emacs -Q --batch -L user-lisp/helheim/ewm \
   -l tests/helheim-ewm-screenshot-tests.el -f ert-run-tests-batch-and-exit
 #+end_src
 
+* Clipboard manager
+
+Clipboard management uses Consult to search and pick from Emacs's =kill-ring=,
+which EWM automatically populates with all copies from Wayland clients and Emacs.
+
+- =Super+y= (or =Super+Shift+v=) opens the fuzzy clipboard history picker everywhere.
+- Selecting an item inserts it into the active text field (in Emacs or Wayland surfaces)
+  and synchronizes it immediately to the active Wayland selection via =ewm-set-selection-module=.
+- Prefix argument =C-u= sets the selected item as the active Wayland clipboard
+  without inserting it.
+- History is persisted across Emacs sessions using =savehist-mode=.
+
+Run clipboard tests:
+
+#+begin_src sh
+emacs -Q --batch -L var/elpaca/builds/consult -L user-lisp/helheim/ewm \
+  -l tests/helheim-ewm-clipboard-tests.el -f ert-run-tests-batch-and-exit
+#+end_src
+
 * Hardware controls
 
 EWM's built-in bindings handle volume up/down, speaker mute, microphone mute,

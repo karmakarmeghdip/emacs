@@ -11,6 +11,7 @@
 (require 'helheim-ewm-power)
 (require 'helheim-ewm-screenshot)
 (require 'helheim-ewm-clipboard)
+(require 'helheim-ewm-mpris)
 
 ;;;###autoload (with-eval-after-load 'ewm (require 'helheim-ewm))
 (with-eval-after-load 'ewm
@@ -51,6 +52,17 @@
   (keymap-set ewm-mode-map "S-<print>" (ewm-key #'helheim-ewm-screenshot-screen :fullscreen))
   ;; Clipboard history picker: Super+y
   (keymap-set ewm-mode-map "s-y" (ewm-key #'helheim-ewm-clipboard :fullscreen))
+  ;; Media controls: Play/Pause, Next, Previous, Stop
+  (keymap-set ewm-mode-map "<AudioPlay>" (ewm-key #'helheim-ewm-mpris-play-pause :fullscreen))
+  (keymap-set ewm-mode-map "<XF86AudioPlay>" (ewm-key #'helheim-ewm-mpris-play-pause :fullscreen))
+  (keymap-set ewm-mode-map "<AudioPause>" (ewm-key #'helheim-ewm-mpris-play-pause :fullscreen))
+  (keymap-set ewm-mode-map "<XF86AudioPause>" (ewm-key #'helheim-ewm-mpris-play-pause :fullscreen))
+  (keymap-set ewm-mode-map "<AudioStop>" (ewm-key #'helheim-ewm-mpris-stop :fullscreen))
+  (keymap-set ewm-mode-map "<XF86AudioStop>" (ewm-key #'helheim-ewm-mpris-stop :fullscreen))
+  (keymap-set ewm-mode-map "<AudioNext>" (ewm-key #'helheim-ewm-mpris-next :fullscreen))
+  (keymap-set ewm-mode-map "<XF86AudioNext>" (ewm-key #'helheim-ewm-mpris-next :fullscreen))
+  (keymap-set ewm-mode-map "<AudioPrev>" (ewm-key #'helheim-ewm-mpris-previous :fullscreen))
+  (keymap-set ewm-mode-map "<XF86AudioPrev>" (ewm-key #'helheim-ewm-mpris-previous :fullscreen))
   (add-hook 'ewm-mode-hook #'helheim-ewm-power--start)
   (when (bound-and-true-p ewm-mode)
     (helheim-ewm-power--start)))

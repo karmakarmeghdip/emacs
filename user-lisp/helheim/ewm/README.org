@@ -124,6 +124,28 @@ wpctl get-volume @DEFAULT_AUDIO_SINK@
 brightnessctl -m
 #+end_src
 
+* Media controls (MPRIS)
+
+Media playback uses standard D-Bus MPRIS (=org.mpris.MediaPlayer2=) to control
+running players (Helium/Chromium, Firefox, Spotify, MPV, VLC, etc.).
+
+- =XF86AudioPlay= / =AudioPlay= toggles playback (Play/Pause).
+- =XF86AudioNext= / =AudioNext= skips to the next track.
+- =XF86AudioPrev= / =AudioPrev= skips to the previous track.
+- =XF86AudioStop= / =AudioStop= stops playback.
+- Prioritizes currently active/playing media; falls back to the most recently
+  controlled player or any paused player.
+- Asynchronous and non-blocking via D-Bus method calls.
+- Intercepted with =:fullscreen=, so media keys work over Emacs buffers,
+  external Wayland windows, and fullscreen applications.
+
+Run MPRIS tests:
+
+#+begin_src sh
+emacs -Q --batch -L user-lisp/helheim/ewm \
+  -l tests/helheim-ewm-mpris-tests.el -f ert-run-tests-batch-and-exit
+#+end_src
+
 * Behaviour
 
 - Unlocked on AC: no automatic locking or display blanking.

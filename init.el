@@ -141,6 +141,7 @@
 ;;; Terminal emulators
 
 (require 'helheim-ghostel) ; based on libghostty (Zig) -- same as in Ghostty
+(require 'user-eshell)     ; Eshell with Starship/Catppuccin prompt, native icons, & Ghostel integration
 ; (require 'helheim-vterm)   ; based on libvterm (C) -- same as in Neovim
 
 ;;; LLM

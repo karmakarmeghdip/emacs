@@ -4,7 +4,7 @@
 ;;
 ;; Personal Eshell configuration:
 ;; - Minimalist Starship-like prompt styled with Catppuccin palette
-;; - Ghostel integration for running interactive TUI applications (vim, htop, btop, etc.)
+;; - Eat integration for running interactive TUI applications (vim, htop, btop, etc.)
 ;; - Native file icons for `eshell/ls' via `nerd-icons' (no external binaries like eza)
 ;; - Quick session spawning via `eshell-new'
 ;;
@@ -256,16 +256,25 @@ and desynchronizing TRAMP connection buffers.  Explicit TAB completion remains."
   (add-hook '+corfu-inhibit-auto-functions #'user-eshell--inhibit-corfu-auto))
 
 ;;; ---------------------------------------------------------------------------
-;;; Ghostel Integration (interactive TUI apps)
+;;; Eat Terminal Emulation for Eshell (inline interactive TUI apps)
 ;;; ---------------------------------------------------------------------------
 
-(with-eval-after-load 'ghostel
-  (require 'ghostel-eshell nil t)
-  (when (fboundp 'ghostel-eshell-visual-command-mode)
-    (ghostel-eshell-visual-command-mode 1)
-    (defalias 'eshell/v #'eshell/ghostel)))
+(setup eat
+  (:install t)
+  (:when-loaded
+    (setq eat-kill-buffer-on-exit t
+          eat-enable-blinking-text t)))
 
-;; Additional visual commands that should run inside Ghostel
+(with-eval-after-load 'esh-mode
+  (require 'eat)
+  (add-hook 'eshell-load-hook #'eat-eshell-mode)
+  (add-hook 'eshell-load-hook #'eat-eshell-visual-command-mode)
+  (when (featurep 'esh-mode)
+    (eat-eshell-mode 1)
+    (eat-eshell-visual-command-mode 1))
+  (defalias 'eshell/v #'eat))
+
+;; Visual commands to run with Eat inside Eshell
 (dolist (cmd '("vim" "nvim" "nano" "view"
                "htop" "btop" "top" "gputop"
                "less" "more"
@@ -315,71 +324,10 @@ and desynchronizing TRAMP connection buffers.  Explicit TAB completion remains."
 (when (fboundp 'hel-set-initial-state)
   (hel-set-initial-state 'eshell-mode 'insert))
 
-(defun user-eshell-backward-char (&optional n)
-  "Move backward N chars, stopping at `eshell-last-output-end' in insert state."
-  (interactive "p")
-  (let ((n (or n 1)))
-    (if (and (bound-and-true-p eshell-last-output-end)
-             (eq (bound-and-true-p hel-state) 'insert))
-        (goto-char (max eshell-last-output-end (- (point) n)))
-      (backward-char n))))
-
-(defun user-eshell-left-char (&optional n)
-  "Move left N chars, stopping at `eshell-last-output-end' in insert state."
-  (interactive "p")
-  (let ((n (or n 1)))
-    (if (and (bound-and-true-p eshell-last-output-end)
-             (eq (bound-and-true-p hel-state) 'insert))
-        (goto-char (max eshell-last-output-end (- (point) n)))
-      (left-char n))))
-
-(defun user-eshell-backward-word (&optional n)
-  "Move backward N words, stopping at `eshell-last-output-end' in insert state."
-  (interactive "p")
-  (let ((n (or n 1)))
-    (if (and (bound-and-true-p eshell-last-output-end)
-             (eq (bound-and-true-p hel-state) 'insert))
-        (let ((target (save-excursion (backward-word n) (point))))
-          (goto-char (max eshell-last-output-end target)))
-      (backward-word n))))
-
-(defun user-eshell--confine-insert-state ()
-  "Ensure point does not precede `eshell-last-output-end' while in insert state.
-Mimics Ghostel / terminal emulator behavior where typing cursor cannot enter prompt or history."
-  (when (and (derived-mode-p 'eshell-mode)
-             (bound-and-true-p eshell-last-output-end)
-             (eq (bound-and-true-p hel-state) 'insert)
-             (< (point) eshell-last-output-end))
-    (goto-char eshell-last-output-end)))
-
-(defun user-eshell--return-to-prompt-on-insert ()
-  "Move point to prompt when entering insert state in Eshell from history.
-Mimics Ghostel's behavior when returning from normal/scrollback mode."
-  (when (derived-mode-p 'eshell-mode)
-    (when (and (bound-and-true-p eshell-last-output-end)
-               (< (point) eshell-last-output-end))
-      (goto-char (point-max)))))
-
-(defun user-eshell--setup-hel-integration ()
-  "Setup Hel modal editing keys and hooks for Eshell buffer."
-  (setq-local eshell-confine-point-to-input nil)
-  (add-hook 'post-command-hook #'user-eshell--confine-insert-state nil t))
-
-(add-hook 'eshell-mode-hook #'user-eshell--setup-hel-integration)
-
-(with-eval-after-load 'hel-core
-  (add-hook 'hel-insert-state-enter-hook #'user-eshell--return-to-prompt-on-insert))
-
 ;; Bindings in Eshell
 (with-eval-after-load 'esh-mode
   ;; Clear screen with C-l in Eshell
-  (keymap-set eshell-mode-map "C-l" #'eshell/clear)
-  (when (fboundp 'hel-keymap-set)
-    (hel-keymap-set eshell-mode-map :state 'insert
-      "<left>" #'user-eshell-left-char
-      "C-b" #'user-eshell-backward-char
-      "M-b" #'user-eshell-backward-word
-      "C-<left>" #'user-eshell-backward-word)))
+  (keymap-set eshell-mode-map "C-l" #'eshell/clear))
 
 ;;; ---------------------------------------------------------------------------
 ;;; Global Keybindings

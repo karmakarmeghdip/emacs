@@ -143,7 +143,7 @@
 
 ;; Disable eshell-highlight-prompt so custom Catppuccin faces are preserved
 (setq eshell-highlight-prompt nil)
-(setq eshell-prompt-regexp "^[^\n]*[λ❯#$] ")
+(setq eshell-prompt-regexp "^[λ❯#$] ")
 (setq eshell-prompt-function #'user-eshell-prompt)
 
 ;;; ---------------------------------------------------------------------------
@@ -295,22 +295,100 @@ and desynchronizing TRAMP connection buffers.  Explicit TAB completion remains."
         eshell-hist-ignoredups t
         eshell-save-history-on-exit t)
 
-;; Hel modal editor integration: start Eshell in insert mode
+;;; ---------------------------------------------------------------------------
+;;; Built-in Prompt & Input Rebinding (eshell-rebind)
+;;; ---------------------------------------------------------------------------
+
+(require 'em-rebind)
+(add-to-list 'eshell-modules-list 'eshell-rebind)
+;; Do not let eshell-rebind blindly confine movement commands to input in all states,
+;; because that breaks Hel normal-mode navigation (<up>, k, line-move into scrollback).
+(setopt eshell-confine-point-to-input nil)
+;; Ensure DEL (ascii 127) as well as <backspace> are mapped to eshell-delete-backward-char
+(add-to-list 'eshell-rebind-keys-alist '([127] . eshell-delete-backward-char))
+
+;;; ---------------------------------------------------------------------------
+;;; Hel Modal Editor Integration
+;;; ---------------------------------------------------------------------------
+
+;; Start Eshell in insert mode
 (when (fboundp 'hel-set-initial-state)
   (hel-set-initial-state 'eshell-mode 'insert))
 
-;; Clear screen with C-l in Eshell
+(defun user-eshell-backward-char (&optional n)
+  "Move backward N chars, stopping at `eshell-last-output-end' in insert state."
+  (interactive "p")
+  (let ((n (or n 1)))
+    (if (and (bound-and-true-p eshell-last-output-end)
+             (eq (bound-and-true-p hel-state) 'insert))
+        (goto-char (max eshell-last-output-end (- (point) n)))
+      (backward-char n))))
+
+(defun user-eshell-left-char (&optional n)
+  "Move left N chars, stopping at `eshell-last-output-end' in insert state."
+  (interactive "p")
+  (let ((n (or n 1)))
+    (if (and (bound-and-true-p eshell-last-output-end)
+             (eq (bound-and-true-p hel-state) 'insert))
+        (goto-char (max eshell-last-output-end (- (point) n)))
+      (left-char n))))
+
+(defun user-eshell-backward-word (&optional n)
+  "Move backward N words, stopping at `eshell-last-output-end' in insert state."
+  (interactive "p")
+  (let ((n (or n 1)))
+    (if (and (bound-and-true-p eshell-last-output-end)
+             (eq (bound-and-true-p hel-state) 'insert))
+        (let ((target (save-excursion (backward-word n) (point))))
+          (goto-char (max eshell-last-output-end target)))
+      (backward-word n))))
+
+(defun user-eshell--confine-insert-state ()
+  "Ensure point does not precede `eshell-last-output-end' while in insert state.
+Mimics Ghostel / terminal emulator behavior where typing cursor cannot enter prompt or history."
+  (when (and (derived-mode-p 'eshell-mode)
+             (bound-and-true-p eshell-last-output-end)
+             (eq (bound-and-true-p hel-state) 'insert)
+             (< (point) eshell-last-output-end))
+    (goto-char eshell-last-output-end)))
+
+(defun user-eshell--return-to-prompt-on-insert ()
+  "Move point to prompt when entering insert state in Eshell from history.
+Mimics Ghostel's behavior when returning from normal/scrollback mode."
+  (when (derived-mode-p 'eshell-mode)
+    (when (and (bound-and-true-p eshell-last-output-end)
+               (< (point) eshell-last-output-end))
+      (goto-char (point-max)))))
+
+(defun user-eshell--setup-hel-integration ()
+  "Setup Hel modal editing keys and hooks for Eshell buffer."
+  (setq-local eshell-confine-point-to-input nil)
+  (add-hook 'post-command-hook #'user-eshell--confine-insert-state nil t))
+
+(add-hook 'eshell-mode-hook #'user-eshell--setup-hel-integration)
+
+(with-eval-after-load 'hel-core
+  (add-hook 'hel-insert-state-enter-hook #'user-eshell--return-to-prompt-on-insert))
+
+;; Bindings in Eshell
 (with-eval-after-load 'esh-mode
-  (keymap-set eshell-mode-map "C-l" #'eshell/clear))
+  ;; Clear screen with C-l in Eshell
+  (keymap-set eshell-mode-map "C-l" #'eshell/clear)
+  (when (fboundp 'hel-keymap-set)
+    (hel-keymap-set eshell-mode-map :state 'insert
+      "<left>" #'user-eshell-left-char
+      "C-b" #'user-eshell-backward-char
+      "M-b" #'user-eshell-backward-word
+      "C-<left>" #'user-eshell-backward-word)))
 
 ;;; ---------------------------------------------------------------------------
 ;;; Global Keybindings
 ;;; ---------------------------------------------------------------------------
 
-(keymap-global-set "s-<return>" #'eshell-new)
-(keymap-global-set "s-RET" #'eshell-new)
-(keymap-global-set "S-s-<return>" #'ghostel-new)
-(keymap-global-set "S-s-RET" #'ghostel-new)
+(keymap-global-set "s-<return>" #'ghostel-new)
+(keymap-global-set "s-RET" #'ghostel-new)
+(keymap-global-set "S-s-<return>" #'eshell-new)
+(keymap-global-set "S-s-RET" #'eshell-new)
 (keymap-global-set "C-c o e" #'eshell-new)
 
 ;;; .

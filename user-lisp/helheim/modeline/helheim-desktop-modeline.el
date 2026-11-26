@@ -39,7 +39,8 @@
 (defun helheim-desktop-modeline--watch ()
   "Subscribe to NetworkManager and BlueZ instead of polling them."
   (require 'dbus)
-  (mapc #'dbus-unregister-object helheim-desktop-modeline--subscriptions)
+  (dolist (sub helheim-desktop-modeline--subscriptions)
+    (ignore-errors (dbus-unregister-object sub)))
   (setq helheim-desktop-modeline--subscriptions nil)
   ;; Match paths, not unique owners, so daemon restarts do not stale the matches.
   (dolist (path '("/org/freedesktop/NetworkManager" "/org/bluez"))
@@ -156,11 +157,15 @@ narrow windows omit the clock rather than overlap the right-hand status."
                  (string-replace "%" "%%"
                                  (or (and (derived-mode-p 'ghostel-mode)
                                           (bound-and-true-p ghostel-title))
+                                     (and (derived-mode-p 'eshell-mode)
+                                          (or (bound-and-true-p user-eshell-title)
+                                              (buffer-name)))
                                      (and (boundp 'ewm-surface-title)
                                           (not (string-empty-p (or ewm-surface-title "")))
                                           ewm-surface-title)
                                      (and (boundp 'ewm-surface-app) ewm-surface-app)
                                      (and (derived-mode-p 'ghostel-mode) "Terminal")
+                                     (and (derived-mode-p 'eshell-mode) "Eshell")
                                      "Application"))
                  'face 'mode-line-buffer-id) " "))
   (doom-modeline-def-segment desktop-status
@@ -168,15 +173,17 @@ narrow windows omit the clock rather than overlap the right-hand status."
   (doom-modeline-def-modeline 'desktop '(desktop-title))
   (add-to-list 'doom-modeline-mode-alist '(ewm-surface-mode . desktop))
   (setf (alist-get 'ghostel-mode doom-modeline-mode-alist) 'desktop)
+  (setf (alist-get 'eshell-mode doom-modeline-mode-alist) 'desktop)
   ;; Extend each installed layout instead of copying upstream definitions.
   (dolist (definition doom-modeline--modelines)
     (pcase-let ((`(,name ,left ,right) definition))
-      (doom-modeline-def-modeline name left (append right '(desktop-status battery)))
+      (unless (memq 'desktop-status right)
+        (doom-modeline-def-modeline name left (append right '(desktop-status battery))))
       (advice-add (intern (format "doom-modeline-format--%s" name))
                   :filter-return #'helheim-desktop-modeline--layout)))
   (dolist (buffer (buffer-list))
     (with-current-buffer buffer
-      (when (derived-mode-p 'ewm-surface-mode 'ghostel-mode)
+      (when (derived-mode-p 'ewm-surface-mode 'ghostel-mode 'eshell-mode)
         (doom-modeline-set-modeline 'desktop)))))
 
 (with-eval-after-load 'ewm

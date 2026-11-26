@@ -37,12 +37,12 @@
              :click-method "clickfinger")))
 
   ;; Keybindings
-  ;; Super+Return: Ghostel terminal surface running Fish, also available over fullscreen apps.
-  (keymap-set ewm-mode-map "s-<return>" (ewm-key #'ghostel-new :fullscreen))
-  (keymap-set ewm-mode-map "s-RET" (ewm-key #'ghostel-new :fullscreen))
-  ;; Super+Shift+Return: Open Eshell surface.
-  (keymap-set ewm-mode-map "S-s-<return>" (ewm-key #'eshell-new :fullscreen))
-  (keymap-set ewm-mode-map "S-s-RET" (ewm-key #'eshell-new :fullscreen))
+  ;; Super+Return: Open Eshell (+ Eat) surface, also available over fullscreen apps.
+  (keymap-set ewm-mode-map "s-<return>" (ewm-key #'eshell-new :fullscreen))
+  (keymap-set ewm-mode-map "s-RET" (ewm-key #'eshell-new :fullscreen))
+  ;; Super+Shift+Return: Ghostel terminal surface running Fish.
+  (keymap-set ewm-mode-map "S-s-<return>" (ewm-key #'ghostel-new :fullscreen))
+  (keymap-set ewm-mode-map "S-s-RET" (ewm-key #'ghostel-new :fullscreen))
   ;; Super+d: Buffers, running Wayland apps, files and XDG apps.
   (keymap-set ewm-mode-map "s-d" (ewm-key #'consult-buffer :fullscreen))
   ;; Super+q: Close the focused buffer / Wayland application

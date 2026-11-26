@@ -259,20 +259,42 @@ and desynchronizing TRAMP connection buffers.  Explicit TAB completion remains."
 ;;; Eat Terminal Emulation for Eshell (inline interactive TUI apps)
 ;;; ---------------------------------------------------------------------------
 
+(defun user-eshell--sync-eat-hel ()
+  "Disable `hel-local-mode' while Eat forwards raw/semi-char keys to a TUI."
+  (when (boundp 'hel-local-mode)
+    (if (or (bound-and-true-p eat--semi-char-mode)
+            (bound-and-true-p eat--char-mode)
+            (bound-and-true-p eat--eshell-semi-char-mode)
+            (bound-and-true-p eat--eshell-char-mode))
+        (when hel-local-mode
+          (hel-local-mode -1))
+      (unless hel-local-mode
+        (hel-local-mode 1)))))
+
+(defun eshell/v (&rest args)
+  "Run ARGS as a visual command in Eat, or open an Eat terminal buffer."
+  (if args
+      (apply #'eshell-exec-visual args)
+    (eat)))
+
+;; Run inside `(setup eat (:install t) ...)' so Elpaca activates `eat' on
+;; `load-path' before `eat' functions or hooks execute during startup.
 (setup eat
   (:install t)
-  (:when-loaded
-    (setq eat-kill-buffer-on-exit t
-          eat-enable-blinking-text t)))
-
-(with-eval-after-load 'esh-mode
-  (require 'eat)
+  (:setopt eat-kill-buffer-on-exit t
+           eat-enable-blinking-text t)
   (add-hook 'eshell-load-hook #'eat-eshell-mode)
   (add-hook 'eshell-load-hook #'eat-eshell-visual-command-mode)
-  (when (featurep 'esh-mode)
+  (when (featurep 'eshell)
     (eat-eshell-mode 1)
-    (eat-eshell-visual-command-mode 1))
-  (defalias 'eshell/v #'eat))
+    (eat-eshell-visual-command-mode 1)))
+
+(with-eval-after-load 'eat
+  (dolist (hook '(eat--semi-char-mode-hook
+                  eat--char-mode-hook
+                  eat--eshell-semi-char-mode-hook
+                  eat--eshell-char-mode-hook))
+    (add-hook hook #'user-eshell--sync-eat-hel)))
 
 ;; Visual commands to run with Eat inside Eshell
 (dolist (cmd '("vim" "nvim" "nano" "view"
@@ -333,10 +355,10 @@ and desynchronizing TRAMP connection buffers.  Explicit TAB completion remains."
 ;;; Global Keybindings
 ;;; ---------------------------------------------------------------------------
 
-(keymap-global-set "s-<return>" #'ghostel-new)
-(keymap-global-set "s-RET" #'ghostel-new)
-(keymap-global-set "S-s-<return>" #'eshell-new)
-(keymap-global-set "S-s-RET" #'eshell-new)
+(keymap-global-set "s-<return>" #'eshell-new)
+(keymap-global-set "s-RET" #'eshell-new)
+(keymap-global-set "S-s-<return>" #'ghostel-new)
+(keymap-global-set "S-s-RET" #'ghostel-new)
 (keymap-global-set "C-c o e" #'eshell-new)
 
 ;;; .

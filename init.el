@@ -67,6 +67,10 @@
 ;;         gnutls-algorithm-priority "NORMAL:-VERS-TLS1.3")
 
 (setq helheim-package-manager 'elpaca) ;; or 'straight
+;; Avoid Elpaca stale-core-date warning on Emacs .50 development builds.
+(when (and (> (length (version-to-list emacs-version)) 2) emacs-build-time)
+  (defvar elpaca-core-date
+    (list (string-to-number (format-time-string "%Y%m%d" emacs-build-time)))))
 (require 'helheim-core)
 
 ;;; Color theme

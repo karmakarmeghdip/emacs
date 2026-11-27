@@ -1,12 +1,15 @@
 ;;; helheim-desktop-modeline.el --- Desktop additions to Doom Modeline -*- lexical-binding: t; no-byte-compile: t; -*-
 
 ;;; Commentary:
-;; Keep the distribution's editing layouts, with a clock and battery, and
-;; use a clean title/status layout for EWM.  No I/O happens during redisplay.
+;; Keep the Starship Catppuccin Mocha Powerline editing layouts with a centered
+;; lavender clock and right-hand connectivity/battery pills, and use a clean
+;; title/status layout for EWM, Ghostel, and Eshell.  No I/O happens during
+;; redisplay.
 
 ;;; Code:
 (require 'subr-x)
 (require 'seq)
+(require 'helheim-modeline)
 
 (defvar ewm-surface-title)
 (defvar ewm-surface-app)
@@ -87,8 +90,7 @@
                   (`("wifi" . disconnected) "_strength_outline")
                   (`("wifi" . disabled) "_off")
                   (_ "_alert"))))
-    (propertize (nerd-icons-mdicon (concat "nf-md-" kind suffix)
-                                  :face 'mode-line)
+    (propertize (nerd-icons-mdicon (concat "nf-md-" kind suffix))
                 'help-echo (format "%s: %s" (capitalize kind) state))))
 
 (defun helheim-desktop-modeline--collected (process _event)
@@ -114,27 +116,77 @@
       (when (buffer-live-p (process-buffer process))
         (kill-buffer (process-buffer process))))))
 
+(defun helheim-desktop-modeline--display-cols (str)
+  "Return approximate column width of STR accounting for Nerd Font pixel widths."
+  (if (or (null str) (string-empty-p str))
+      0
+    (if (and (display-graphic-p) (fboundp 'doom-modeline-string-pixel-width))
+        (ceiling (/ (float (doom-modeline-string-pixel-width str))
+                    (max 1 (window-font-width nil 'mode-line))))
+      (string-width str))))
+
+(defun helheim-desktop-modeline--escape-pct (str)
+  "Escape literal `%' in already-formatted STR while preserving text properties."
+  (if (stringp str)
+      (helheim-modeline--escape-pct str)
+    ""))
+
 (defun helheim-desktop-modeline--layout (layout)
-  "Insert a centered clock into Doom Modeline's rendered LAYOUT.
-Keep its existing left/right segments and right-alignment spacer.  On
-narrow windows omit the clock rather than overlap the right-hand status."
+  "Insert a centered Starship lavender clock into Doom Modeline's LAYOUT.
+Keep its existing left/right pill chains and right-alignment spacer.
+Truncates left pill chains cleanly with a preserved `' cap, and omits
+the clock on narrow windows rather than overlapping the right-hand pills."
   (let* ((left (format-mode-line (car layout)))
-         (right (format-mode-line (nth 2 layout)))
+         (right (or (nth 2 layout) ""))
          (clock (let ((doom-modeline--limited-width-p nil))
-                  (or (doom-modeline-segment--time) "")))
+                  (or (helheim-modeline--pill-time) "")))
+         (clock-cols (helheim-desktop-modeline--display-cols clock))
+         (right-cols (helheim-desktop-modeline--display-cols right))
          (width (window-body-width))
-         (start (/ (- width (string-width clock)) 2))
-         (room (- width start (string-width clock) 1)))
-    (if (or (string-empty-p clock) (< start 8) (> (string-width right) room))
-        (list (string-replace
-               "%" "%%"
-               (truncate-string-to-width left (max 0 (- width (string-width right) 1))
-                                         nil nil "…"))
-              (nth 1 layout) (nth 2 layout))
-      (list (string-replace "%" "%%"
-                            (truncate-string-to-width left (max 0 (1- start)) nil nil "…"))
-            (propertize " " 'display `(space :align-to ,start))
-            clock (nth 1 layout) (nth 2 layout)))))
+         (start (/ (- width clock-cols) 2))
+         (room (- width start clock-cols 1))
+         (active (doom-modeline--active))
+         (right-escaped (helheim-desktop-modeline--escape-pct right)))
+    (if (or (string-empty-p clock) (< start 8) (> right-cols room))
+        (let ((max-left (max 0 (- width right-cols 1))))
+          (list (helheim-desktop-modeline--escape-pct
+                 (helheim-modeline--truncate-pills left max-left active))
+                (nth 1 layout)
+                right-escaped))
+      (list (helheim-desktop-modeline--escape-pct
+             (helheim-modeline--truncate-pills left (max 0 (1- start)) active))
+            (propertize " "
+                        'face (doom-modeline-face)
+                        'display `(space :align-to ,start))
+            clock
+            (nth 1 layout)
+            right-escaped))))
+
+(defun helheim-desktop-modeline--badge ()
+  "Return compact badge label for the current desktop/terminal buffer."
+  (cond
+   ((derived-mode-p 'eshell-mode) " \xe795 ")
+   ((derived-mode-p 'ghostel-mode) " \xe795 ")
+   ((and (boundp 'ewm-surface-app)
+         (stringp ewm-surface-app)
+         (not (string-empty-p ewm-surface-app)))
+    (format " \xf2d0 %s " ewm-surface-app))
+   (t " \xf2d0 ")))
+
+(defun helheim-desktop-modeline--title ()
+  "Return clean window or terminal title without `*...*' buffer wrappers."
+  (or (and (derived-mode-p 'ghostel-mode)
+           (bound-and-true-p ghostel-title))
+      (and (derived-mode-p 'eshell-mode)
+           (or (bound-and-true-p user-eshell-title)
+               (buffer-name)))
+      (and (boundp 'ewm-surface-title)
+           (not (string-empty-p (or ewm-surface-title "")))
+           ewm-surface-title)
+      (and (boundp 'ewm-surface-app) ewm-surface-app)
+      (and (derived-mode-p 'ghostel-mode) "Terminal")
+      (and (derived-mode-p 'eshell-mode) "Eshell")
+      "Application"))
 
 (with-eval-after-load 'doom-modeline
   (setq doom-modeline-minor-modes nil
@@ -142,45 +194,46 @@ narrow windows omit the clock rather than overlap the right-hand status."
         display-time-format "%H:%M:%S"
         display-time-interval 1
         display-time-default-load-average nil
-        display-time-mail-function #'ignore)
+        display-time-mail-function #'ignore
+        helheim-modeline--desktop-enabled t)
   (display-time-mode 1)
   (display-battery-mode 1)
   ;; Keep the clock and battery visible in inactive windows too.
   (dolist (segment '(time battery))
     (add-to-list 'doom-modeline-always-visible-segments segment))
-  (dolist (segment '(minor-modes major-mode buffer-position time battery desktop-status))
-    (doom-modeline-remove-segment segment 'all))
 
   (doom-modeline-def-segment desktop-title
     "Display the window or terminal title without its buffer-name wrapper."
-    (concat " " (propertize
-                 (string-replace "%" "%%"
-                                 (or (and (derived-mode-p 'ghostel-mode)
-                                          (bound-and-true-p ghostel-title))
-                                     (and (derived-mode-p 'eshell-mode)
-                                          (or (bound-and-true-p user-eshell-title)
-                                              (buffer-name)))
-                                     (and (boundp 'ewm-surface-title)
-                                          (not (string-empty-p (or ewm-surface-title "")))
-                                          ewm-surface-title)
-                                     (and (boundp 'ewm-surface-app) ewm-surface-app)
-                                     (and (derived-mode-p 'ghostel-mode) "Terminal")
-                                     (and (derived-mode-p 'eshell-mode) "Eshell")
-                                     "Application"))
-                 'face 'mode-line-buffer-id) " "))
+    (concat " " (helheim-desktop-modeline--title) " "))
+
   (doom-modeline-def-segment desktop-status
     (identity helheim-desktop-modeline--status))
-  (doom-modeline-def-modeline 'desktop '(desktop-title))
+
+  (doom-modeline-def-segment starship-desktop-left
+    "Starship pill chain for desktop apps, Ghostel, and Eshell."
+    (helheim-modeline--render-pills
+     (list (list (helheim-desktop-modeline--badge) 'red :inactive-bg 'surface1 :weight 'bold)
+           (list (concat " " (helheim-desktop-modeline--title) " ")
+                 'peach :inactive-bg 'surface0 :weight 'bold))
+     'left))
+
+  (doom-modeline-def-segment starship-desktop-right
+    "Starship right pill chain for desktop apps, Ghostel, and Eshell."
+    (helheim-modeline--render-pills
+     (list (helheim-modeline--pill-desktop-status)
+           (helheim-modeline--pill-battery))
+     'right))
+
+  (doom-modeline-def-modeline 'desktop '(starship-desktop-left) '(starship-desktop-right))
   (add-to-list 'doom-modeline-mode-alist '(ewm-surface-mode . desktop))
   (setf (alist-get 'ghostel-mode doom-modeline-mode-alist) 'desktop)
   (setf (alist-get 'eshell-mode doom-modeline-mode-alist) 'desktop)
-  ;; Extend each installed layout instead of copying upstream definitions.
+
   (dolist (definition doom-modeline--modelines)
-    (pcase-let ((`(,name ,left ,right) definition))
-      (unless (memq 'desktop-status right)
-        (doom-modeline-def-modeline name left (append right '(desktop-status battery))))
+    (let ((name (car definition)))
       (advice-add (intern (format "doom-modeline-format--%s" name))
                   :filter-return #'helheim-desktop-modeline--layout)))
+
   (dolist (buffer (buffer-list))
     (with-current-buffer buffer
       (when (derived-mode-p 'ewm-surface-mode 'ghostel-mode 'eshell-mode)
